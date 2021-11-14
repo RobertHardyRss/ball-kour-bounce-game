@@ -6,6 +6,6 @@ function parabolicEasing(t) {
 	const x = t * 4 - 2;
 	const y = x * x * -1 + 4;
 
-	// translate y back into a percentage from 0 to 1+
+	// translate y back into a percentage
 	return y / 4;
 }

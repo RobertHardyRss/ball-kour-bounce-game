@@ -1,4 +1,5 @@
 /// <reference path="utilities.js">
+/// <reference path="player-tracer.js.js">
 
 // @ts-check
 /** @type {HTMLCanvasElement} */
@@ -18,13 +19,13 @@ class KeyboardState {
 		window.addEventListener("keydown", (e) => {
 			if (e.key === "ArrowRight") this.isAcceleratorDown = true;
 			if (e.key === "ArrowLeft") this.isBrakeDown = true;
-			console.log("keydown", e.key);
+			// console.log("keydown", e.key);
 		});
 
 		window.addEventListener("keyup", (e) => {
 			if (e.key === "ArrowRight") this.isAcceleratorDown = false;
 			if (e.key === "ArrowLeft") this.isBrakeDown = false;
-			console.log("keyup", e.key);
+			// console.log("keyup", e.key);
 		});
 	}
 }
@@ -41,6 +42,12 @@ class Game {
 
 		this.score = 0;
 		this.isOver = false;
+
+		/** @type {HTMLImageElement} */
+		// @ts-ignore
+		this.image = document.getElementById("background-01");
+		this.imageX = 0;
+		// console.log(this.image.width, this.image.height);
 	}
 
 	/** @param {number} timeElapsed */
@@ -75,8 +82,26 @@ class Game {
 				this.scrollSpeed -= this.scrollAcceleration;
 			}
 		}
+
+		this.imageX -= this.scrollSpeed;
+		if (this.imageX <= this.image.width * -1) this.imageX = 0;
 	}
-	render() {}
+	render() {
+		ctx.drawImage(
+			this.image,
+			this.imageX,
+			0,
+			this.image.width,
+			this.image.height
+		);
+		ctx.drawImage(
+			this.image,
+			this.imageX + this.image.width,
+			0,
+			this.image.width,
+			this.image.height
+		);
+	}
 }
 
 class Player {
@@ -104,59 +129,28 @@ class Player {
 	}
 
 	render() {
+		const gradientStartOffset = this.radius * 0.4;
+
 		ctx.save();
+		let rg = ctx.createRadialGradient(
+			this.x - gradientStartOffset,
+			this.y - gradientStartOffset,
+			3,
+			this.x,
+			this.y,
+			this.radius
+		);
+
+		rg.addColorStop(0, "white");
+		rg.addColorStop(0.2, "purple");
+		rg.addColorStop(1, "black");
+
 		ctx.beginPath();
 		ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+		ctx.fillStyle = rg;
 		ctx.fill();
 		ctx.restore();
 	}
-}
-
-class PlayerTracer {
-	/**
-	 * @param {Player} player
-	 * @param {Game} game
-	 */
-	constructor(player, game) {
-		this.x = player.x;
-		this.y = player.y;
-
-		this.game = game;
-
-		this.radius = 5;
-		this.opacity = 1;
-		this.fadeRate = 0.2;
-		this.fadeSpeed = 100;
-		this.lastFade = 0;
-
-		this.isVisible = true;
-	}
-
-	/** @param {number} timeElapsed	*/
-	update(timeElapsed) {
-		this.x -= this.game.scrollSpeed;
-
-		this.lastFade += timeElapsed;
-		if (this.lastFade >= this.fadeSpeed) {
-			this.opacity -= this.fadeRate;
-			this.lastFade = 0;
-		}
-
-		if (this.x + this.radius <= 0 || this.opacity <= 0)
-			this.isVisible = false;
-	}
-
-	render() {
-		ctx.save();
-		ctx.beginPath();
-		ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-		ctx.fillStyle = `hsla(0, 0%, 80%, ${this.opacity})`;
-		ctx.fill();
-		ctx.restore();
-	}
-
-	static lastPlayerTracer = 0;
-	static playerTracerInterval = 500;
 }
 
 let keyboardState = new KeyboardState();
@@ -164,7 +158,7 @@ keyboardState.registerEventListeners();
 
 let game = new Game(keyboardState);
 let player = new Player();
-let tracers = [new PlayerTracer(player, game)];
+PlayerTracer.tracers.push(new PlayerTracer(player, game, ctx));
 
 let lastTimestamp = 0;
 
@@ -175,20 +169,18 @@ function gameLoop(timestamp) {
 
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	let gameObjects = [...tracers, game, player];
+	let gameObjects = [...PlayerTracer.tracers, game, player];
 
 	gameObjects.forEach((o) => {
 		o.update(timeElapsed);
 		o.render();
 	});
 
-	tracers = tracers.filter((t) => t.isVisible);
-	PlayerTracer.lastPlayerTracer += timeElapsed;
-	if (PlayerTracer.lastPlayerTracer >= PlayerTracer.playerTracerInterval) {
-		tracers.push(new PlayerTracer(player, game));
-	}
+	PlayerTracer.manageTracers(player, game, ctx, timeElapsed);
 
 	requestAnimationFrame(gameLoop);
 }
 
-requestAnimationFrame(gameLoop);
+window.onload = () => {
+	requestAnimationFrame(gameLoop);
+};
