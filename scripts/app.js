@@ -1,5 +1,7 @@
 /// <reference path="utilities.js">
-/// <reference path="player-tracer.js.js">
+/// <reference path="player-tracer.js">
+/// <reference path="keyboard-state.js">
+/// <reference path="game.js">
 
 // @ts-check
 /** @type {HTMLCanvasElement} */
@@ -8,101 +10,6 @@ const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 600;
-
-class KeyboardState {
-	constructor() {
-		this.isAcceleratorDown = false;
-		this.isBrakeDown = false;
-	}
-
-	registerEventListeners() {
-		window.addEventListener("keydown", (e) => {
-			if (e.key === "ArrowRight") this.isAcceleratorDown = true;
-			if (e.key === "ArrowLeft") this.isBrakeDown = true;
-			// console.log("keydown", e.key);
-		});
-
-		window.addEventListener("keyup", (e) => {
-			if (e.key === "ArrowRight") this.isAcceleratorDown = false;
-			if (e.key === "ArrowLeft") this.isBrakeDown = false;
-			// console.log("keyup", e.key);
-		});
-	}
-}
-
-class Game {
-	/** @param {KeyboardState} keyboardState */
-	constructor(keyboardState) {
-		this.keyboardState = keyboardState;
-		this.scrollSpeed = 0;
-		this.scrollAcceleration = 5;
-		this.scrollAccelerationInterval = 100;
-		this.lastAccelerationTime = 0;
-		this.maxScrollSpeed = 100;
-
-		this.score = 0;
-		this.isOver = false;
-
-		/** @type {HTMLImageElement} */
-		// @ts-ignore
-		this.image = document.getElementById("background-01");
-		this.imageX = 0;
-		// console.log(this.image.width, this.image.height);
-	}
-
-	/** @param {number} timeElapsed */
-	update(timeElapsed) {
-		this.lastAccelerationTime += timeElapsed;
-
-		if (
-			this.keyboardState.isAcceleratorDown &&
-			this.scrollSpeed < this.maxScrollSpeed
-		) {
-			if (
-				this.scrollSpeed === 0 ||
-				this.lastAccelerationTime >= this.scrollAccelerationInterval
-			) {
-				this.scrollSpeed += this.scrollAcceleration;
-				this.lastAccelerationTime = 0;
-			}
-		}
-
-		if (this.keyboardState.isBrakeDown) {
-			this.scrollSpeed = 0;
-			this.lastAccelerationTime = 0;
-		}
-
-		if (
-			!this.keyboardState.isAcceleratorDown &&
-			!this.keyboardState.isBrakeDown &&
-			this.scrollSpeed > 0
-		) {
-			if (this.lastAccelerationTime >= this.scrollAccelerationInterval) {
-				this.lastAccelerationTime = 0;
-				this.scrollSpeed -= this.scrollAcceleration;
-			}
-		}
-
-		this.imageX -= this.scrollSpeed;
-		if (this.imageX <= this.image.width * -1) this.imageX = 0;
-	}
-	render() {
-		ctx.drawImage(
-			this.image,
-			this.imageX,
-			0,
-			this.image.width,
-			this.image.height
-		);
-		ctx.drawImage(
-			this.image,
-			this.imageX + this.image.width,
-			0,
-			this.image.width,
-			this.image.height
-		);
-	}
-}
 
 class Player {
 	constructor() {
@@ -156,7 +63,7 @@ class Player {
 let keyboardState = new KeyboardState();
 keyboardState.registerEventListeners();
 
-let game = new Game(keyboardState);
+let game = new Game(keyboardState, ctx);
 let player = new Player();
 PlayerTracer.tracers.push(new PlayerTracer(player, game, ctx));
 
@@ -169,7 +76,7 @@ function gameLoop(timestamp) {
 
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	let gameObjects = [...PlayerTracer.tracers, game, player];
+	let gameObjects = [game, ...PlayerTracer.tracers, player];
 
 	gameObjects.forEach((o) => {
 		o.update(timeElapsed);
