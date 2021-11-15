@@ -60,12 +60,62 @@ class Player {
 	}
 }
 
+class Obstacle {
+	/**
+	 * @param {Game} game
+	 * @param {CanvasRenderingContext2D} ctx
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {string} color
+	 */
+	constructor(game, ctx, x, y, color) {
+		this.game = game;
+		this.ctx = ctx;
+
+		this.x = x;
+		this.y = y;
+
+		this.height = 32;
+		this.width = 32;
+		this.color = color;
+		this.isVisible = true;
+	}
+
+	update() {
+		this.x -= this.game.scrollSpeed;
+		this.isVisible = this.x + this.width > 0;
+	}
+
+	render() {
+		this.ctx.save();
+		this.ctx.fillStyle = this.color;
+		this.ctx.fillRect(this.x, this.y, this.width, this.height);
+		this.ctx.restore();
+	}
+}
+
+class SafePlatform extends Obstacle {
+	constructor(game, ctx, x) {
+		super(game, ctx, x, canvas.height - 32, "silver");
+		this.width = canvas.width / 2;
+	}
+
+	update() {
+		super.update();
+	}
+
+	render() {
+		super.render();
+	}
+}
+
 let keyboardState = new KeyboardState();
 keyboardState.registerEventListeners();
 
 let game = new Game(keyboardState, ctx);
 let player = new Player();
 PlayerTracer.tracers.push(new PlayerTracer(player, game, ctx));
+let obstacles = [new SafePlatform(game, ctx, 0)];
 
 let lastTimestamp = 0;
 
@@ -76,7 +126,7 @@ function gameLoop(timestamp) {
 
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	let gameObjects = [game, ...PlayerTracer.tracers, player];
+	let gameObjects = [game, ...PlayerTracer.tracers, player, ...obstacles];
 
 	gameObjects.forEach((o) => {
 		o.update(timeElapsed);
