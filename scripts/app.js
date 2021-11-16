@@ -1,4 +1,6 @@
+// @ts-check
 /** @type {HTMLCanvasElement} */
+// @ts-ignore
 const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 800;
@@ -6,6 +8,8 @@ canvas.height = 600;
 
 class Player {
 	constructor() {
+		this.maxBounceHeight = canvas.height / 2;
+		this.yOfLastBounce = 0;
 		this.x = canvas.width * 0.25;
 		this.y = 0;
 		this.speed = 10;
@@ -13,7 +17,21 @@ class Player {
 	}
 
 	update() {
+		const isMovingDown = this.speed > 0;
+
 		this.y = this.y + this.speed;
+
+		if (this.y + this.radius >= canvas.height) {
+			this.speed *= -1;
+			this.yOfLastBounce = this.y;
+		}
+
+		if (
+			!isMovingDown &&
+			this.y <= this.yOfLastBounce + this.maxBounceHeight
+		) {
+			this.speed *= -1;
+		}
 	}
 
 	render() {
