@@ -6,32 +6,42 @@ const ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 600;
 
+function parabollicEasing(pt) {
+	let x = pt * 4 - 2;
+	let y = x * x * -1 + 4;
+	return y / 4;
+}
+
 class Player {
 	constructor() {
 		this.maxBounceHeight = canvas.height / 2;
 		this.yOfLastBounce = 0;
 		this.x = canvas.width * 0.25;
 		this.y = 0;
-		this.speed = 10;
+		//this.speed = 10;
+		this.bounceTime = 2000;
+		this.timeSinceLastBounce = 0;
 		this.radius = 16;
 	}
 
-	update() {
-		const isMovingDown = this.speed > 0;
+	update(elapsedTime) {
+		this.timeSinceLastBounce += elapsedTime;
+		const isMovingDown = this.timeSinceLastBounce > this.bounceTime / 2;
 
-		this.y = this.y + this.speed;
+		let ef = parabollicEasing(this.timeSinceLastBounce / this.bounceTime);
+		this.y = this.y - ef * this.maxBounceHeight;
 
 		if (this.y + this.radius >= canvas.height) {
-			this.speed *= -1;
+			this.timeSinceLastBounce = 0;
 			this.yOfLastBounce = this.y;
 		}
 
-		if (
-			!isMovingDown &&
-			this.y <= this.yOfLastBounce + this.maxBounceHeight
-		) {
-			this.speed *= -1;
-		}
+		// if (
+		// 	!isMovingDown &&
+		// 	this.y <= this.yOfLastBounce - this.maxBounceHeight
+		// ) {
+		// 	this.speed *= -1;
+		// }
 	}
 
 	render() {
@@ -44,10 +54,14 @@ class Player {
 }
 
 let player = new Player();
+let currentTime = 0;
 
-function gameLoop() {
+function gameLoop(timestamp) {
+	let timeElapsed = timestamp - currentTime;
+	currentTime = timestamp;
+	// console.log(timeElapsed, timestamp);
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	player.update();
+	player.update(timeElapsed);
 	player.render();
 
 	requestAnimationFrame(gameLoop);
