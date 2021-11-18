@@ -12,13 +12,23 @@ function parabollicEasing(pt) {
 	return y / 4;
 }
 
+class KeyboardState {
+	constructor() {
+		this.isAccelerating = false;
+		this.isBraking = false;
+	}
+
+	registerEventHandlers() {
+		window.addEventListener("keydown", (e) => {});
+	}
+}
+
 class Player {
 	constructor() {
 		this.maxBounceHeight = canvas.height / 2;
 		this.yOfLastBounce = 0;
 		this.x = canvas.width * 0.25;
 		this.y = 0;
-		//this.speed = 10;
 		this.bounceTime = 2000;
 		this.timeSinceLastBounce = 0;
 		this.radius = 16;
@@ -29,19 +39,12 @@ class Player {
 		const isMovingDown = this.timeSinceLastBounce > this.bounceTime / 2;
 
 		let ef = parabollicEasing(this.timeSinceLastBounce / this.bounceTime);
-		this.y = this.y - ef * this.maxBounceHeight;
+		this.y = this.yOfLastBounce - ef * this.maxBounceHeight;
 
-		if (this.y + this.radius >= canvas.height) {
+		if (isMovingDown && this.y + this.radius >= canvas.height) {
 			this.timeSinceLastBounce = 0;
 			this.yOfLastBounce = this.y;
 		}
-
-		// if (
-		// 	!isMovingDown &&
-		// 	this.y <= this.yOfLastBounce - this.maxBounceHeight
-		// ) {
-		// 	this.speed *= -1;
-		// }
 	}
 
 	render() {
