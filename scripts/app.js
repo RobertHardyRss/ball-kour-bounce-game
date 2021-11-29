@@ -6,6 +6,9 @@ const ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 600;
 
+/**
+ * @param {number} pt
+ */
 function parabollicEasing(pt) {
 	let x = pt * 4 - 2;
 	let y = x * x * -1 + 4;
@@ -49,7 +52,11 @@ class KeyboardState {
 }
 
 class Player {
-	constructor() {
+	/**
+	 * @param {Array<SafePlatform>} [platforms]
+	 */
+	constructor(platforms) {
+		this.platforms = platforms;
 		this.maxBounceHeight = canvas.height / 2;
 		this.yOfLastBounce = 0;
 		this.x = canvas.width * 0.25;
@@ -59,6 +66,9 @@ class Player {
 		this.radius = 16;
 	}
 
+	/**
+	 * @param {number} elapsedTime
+	 */
 	update(elapsedTime) {
 		this.timeSinceLastBounce += elapsedTime;
 		const isMovingDown = this.timeSinceLastBounce > this.bounceTime / 2;
@@ -66,10 +76,14 @@ class Player {
 		let ef = parabollicEasing(this.timeSinceLastBounce / this.bounceTime);
 		this.y = this.yOfLastBounce - ef * this.maxBounceHeight;
 
-		if (isMovingDown && this.y + this.radius >= canvas.height) {
-			this.timeSinceLastBounce = 0;
-			this.yOfLastBounce = this.y;
-		}
+		this.platforms.forEach((p) => {
+			let isPlatformBelowMe = this.x >= p.x && this.x <= p.x + p.width;
+			
+			if (isMovingDown && this.y + this.radius >= p.y) {
+				this.timeSinceLastBounce = 0;
+				this.yOfLastBounce = this.y;
+			}
+		});
 	}
 
 	render() {
@@ -94,6 +108,9 @@ class Game {
 		this.timeSinceLastAcceleration = 0;
 	}
 
+	/**
+	 * @param {number} elapsedTime
+	 */
 	update(elapsedTime) {
 		this.timeSinceLastAcceleration += elapsedTime;
 
@@ -146,6 +163,9 @@ class Tracer {
 		this.timeSinceFade = 0;
 	}
 
+	/**
+	 * @param {number} timeElapsed
+	 */
 	update(timeElapsed) {
 		this.timeSinceFade += timeElapsed;
 		this.x -= this.g.speed;
@@ -170,13 +190,48 @@ class Tracer {
 	}
 }
 
-let player = new Player();
+class SafePlatform {
+	/**
+	 * @param {Game} g
+	 */
+	constructor(g) {
+		this.game = g;
+		this.width = 400;
+		this.height = 32;
+
+		this.x = 0;
+		this.y = canvas.height - this.height * 1.5;
+
+		this.isVisible = true;
+	}
+
+	/**
+	 * @param {number} elapsedTime
+	 */
+	update(elapsedTime) {
+		this.x -= this.game.speed;
+		this.isVisible = this.x + this.width > 0;
+	}
+
+	render() {
+		ctx.save();
+		ctx.fillStyle = "hsla(0, 0%, 20%, 1)";
+		ctx.fillRect(this.x, this.y, this.width, this.height);
+		ctx.restore();
+	}
+}
+
 let kb = new KeyboardState();
 let game = new Game(kb);
+let platforms = [new SafePlatform(game)];
+let player = new Player(platforms);
 let tracers = [new Tracer(player, game)];
 
 let currentTime = 0;
 
+/**
+ * @param {number} timestamp
+ */
 function gameLoop(timestamp) {
 	let timeElapsed = timestamp - currentTime;
 	currentTime = timestamp;
@@ -195,6 +250,11 @@ function gameLoop(timestamp) {
 
 	player.update(timeElapsed);
 	player.render();
+
+	platforms.forEach((p) => {
+		p.update(timeElapsed);
+		p.render();
+	});
 
 	tracers = tracers.filter((t) => t.isVisible);
 
