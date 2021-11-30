@@ -77,9 +77,14 @@ class Player {
 		this.y = this.yOfLastBounce - ef * this.maxBounceHeight;
 
 		this.platforms.forEach((p) => {
-			let isPlatformBelowMe = this.x >= p.x && this.x <= p.x + p.width;
-			
-			if (isMovingDown && this.y + this.radius >= p.y) {
+			let isPlatformBelowMe =
+				this.x >= p.x && this.x <= p.x + p.width && this.y < p.y;
+
+			if (
+				isMovingDown &&
+				isPlatformBelowMe &&
+				this.y + this.radius >= p.y
+			) {
 				this.timeSinceLastBounce = 0;
 				this.yOfLastBounce = this.y;
 			}
@@ -221,9 +226,51 @@ class SafePlatform {
 	}
 }
 
+class ScorePlatform {
+	/**
+	 * @param {Game} g
+	 */
+	constructor(g) {
+		this.game = g;
+		this.width = 32;
+		this.height = canvas.height;
+
+		this.x = 0;
+		this.y = canvas.height - 100;
+
+		this.isVisible = true;
+
+		this.isScored = false;
+	}
+
+	/**
+	 * @param {number} elapsedTime
+	 */
+	update(elapsedTime) {
+		this.x -= this.game.speed;
+		this.isVisible = this.x + this.width > 0;
+	}
+
+	render() {
+		ctx.save();
+		ctx.fillStyle = "hsla(120, 100%, 50%, 1)";
+		ctx.fillRect(this.x, this.y, this.width, this.height);
+		ctx.restore();
+	}
+}
+
 let kb = new KeyboardState();
 let game = new Game(kb);
-let platforms = [new SafePlatform(game)];
+
+let p1 = new ScorePlatform(game);
+let p2 = new ScorePlatform(game);
+let p3 = new ScorePlatform(game);
+
+p1.x = 400 + 50;
+p2.x = p1.x + 100;
+p3.x = p2.x + 100;
+
+let platforms = [new SafePlatform(game), p1, p2, p3];
 let player = new Player(platforms);
 let tracers = [new Tracer(player, game)];
 
