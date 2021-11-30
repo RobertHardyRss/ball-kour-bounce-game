@@ -77,8 +77,12 @@ class Player {
 		this.y = this.yOfLastBounce - ef * this.maxBounceHeight;
 
 		this.platforms.forEach((p) => {
-			let isPlatformBelowMe =
-				this.x >= p.x && this.x <= p.x + p.width && this.y < p.y;
+			let isOnLeft = this.x + this.radius >= p.x || this.x >= p.x;
+			let isOnRight =
+				this.x - this.radius <= p.x + p.width ||
+				this.x <= p.x + p.width;
+
+			let isPlatformBelowMe = isOnLeft && isOnRight && this.y < p.y;
 
 			if (
 				isMovingDown &&
@@ -285,22 +289,12 @@ function gameLoop(timestamp) {
 	// console.log(timeElapsed, timestamp);
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	game.update(timeElapsed);
-	game.render();
-
 	tracers.push(new Tracer(player, game));
+	let gameObjects = [game, ...tracers, player, ...platforms];
 
-	tracers.forEach((t) => {
-		t.update(timeElapsed);
-		t.render();
-	});
-
-	player.update(timeElapsed);
-	player.render();
-
-	platforms.forEach((p) => {
-		p.update(timeElapsed);
-		p.render();
+	gameObjects.forEach((o) => {
+		o.update(timeElapsed);
+		o.render();
 	});
 
 	tracers = tracers.filter((t) => t.isVisible);
