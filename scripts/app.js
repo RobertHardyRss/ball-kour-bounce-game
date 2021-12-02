@@ -93,7 +93,10 @@ class Player {
 				this.y + this.radius >= p.y
 			) {
 				this.timeSinceLastBounce = 0;
-				this.yOfLastBounce = this.y;
+				this.yOfLastBounce = p.y;
+
+				let event = new Event("bkb-bounce");
+				document.dispatchEvent(event);
 			}
 		});
 
@@ -120,6 +123,12 @@ class Game {
 		this.accelerationRate = 5;
 		this.accelerationInterval = 100;
 		this.timeSinceLastAcceleration = 0;
+
+		this.score = 0;
+		this.scoreX = canvas.width - 150;
+		this.scoreY = 95;
+
+		this.wireUpListeners();
 	}
 
 	/**
@@ -154,7 +163,23 @@ class Game {
 		}
 	}
 
-	render() {}
+	render() {
+		ctx.save();
+
+		ctx.fillStyle = "pink";
+		ctx.strokeStyle = "purple";
+		ctx.font = "90px fantasy";
+
+		ctx.fillText(`${this.score}`, this.scoreX, this.scoreY);
+		ctx.strokeText(`${this.score}`, this.scoreX, this.scoreY);
+		ctx.restore();
+	}
+
+	wireUpListeners() {
+		document.addEventListener("bkb-bounce", (e) => {
+			console.log(e);
+		});
+	}
 }
 
 class Tracer {
