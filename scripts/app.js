@@ -177,7 +177,13 @@ class Game {
 
 	wireUpListeners() {
 		document.addEventListener("bkb-bounce", (e) => {
-			console.log(e.detail);
+			// @ts-ignore
+			let p = e.detail;
+
+			if (p.isScorable && !p.isScored) {
+				this.score++;
+				p.isScored = true;
+			}
 		});
 	}
 }
@@ -275,6 +281,7 @@ class ScorePlatform {
 		this.isVisible = true;
 
 		this.isScored = false;
+		this.isScorable = true;
 	}
 
 	/**
