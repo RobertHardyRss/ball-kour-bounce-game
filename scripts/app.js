@@ -95,7 +95,7 @@ class Player {
 				this.timeSinceLastBounce = 0;
 				this.yOfLastBounce = p.y;
 
-				let event = new Event("bkb-bounce");
+				let event = new CustomEvent("bkb-bounce", { detail: p });
 				document.dispatchEvent(event);
 			}
 		});
@@ -177,7 +177,7 @@ class Game {
 
 	wireUpListeners() {
 		document.addEventListener("bkb-bounce", (e) => {
-			console.log(e);
+			console.log(e.detail);
 		});
 	}
 }
