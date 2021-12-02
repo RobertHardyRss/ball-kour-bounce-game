@@ -61,9 +61,14 @@ class Player {
 		this.yOfLastBounce = 0;
 		this.x = canvas.width * 0.25;
 		this.y = 0;
+		this.prevY = 0;
+
 		this.bounceTime = 2000;
 		this.timeSinceLastBounce = 0;
 		this.radius = 16;
+
+		this.leftSide = this.x - this.radius / 2;
+		this.rightSide = this.x + this.radius / 2;
 	}
 
 	/**
@@ -77,12 +82,10 @@ class Player {
 		this.y = this.yOfLastBounce - ef * this.maxBounceHeight;
 
 		this.platforms.forEach((p) => {
-			let isOnLeft = this.x + this.radius >= p.x || this.x >= p.x;
-			let isOnRight =
-				this.x - this.radius <= p.x + p.width ||
-				this.x <= p.x + p.width;
-
-			let isPlatformBelowMe = isOnLeft && isOnRight && this.y < p.y;
+			let isInside =
+				this.rightSide >= p.x && this.leftSide <= p.x + p.width;
+			let isPlatformBelowMe =
+				isInside && (this.y < p.y || this.prevY < p.y);
 
 			if (
 				isMovingDown &&
@@ -93,6 +96,8 @@ class Player {
 				this.yOfLastBounce = this.y;
 			}
 		});
+
+		this.prevY = this.y;
 	}
 
 	render() {
