@@ -129,6 +129,9 @@ class Game {
 		this.scoreY = 95;
 
 		this.wireUpListeners();
+
+		this.bgImage = new Image();
+		this.bgImage.src = "/images/waves_glow.png";
 	}
 
 	/**
@@ -165,7 +168,11 @@ class Game {
 
 	render() {
 		ctx.save();
+		ctx.drawImage(this.bgImage, 0, 0);
 
+		ctx.restore();
+
+		ctx.save();
 		ctx.fillStyle = "pink";
 		ctx.strokeStyle = "purple";
 		ctx.font = "90px fantasy";
