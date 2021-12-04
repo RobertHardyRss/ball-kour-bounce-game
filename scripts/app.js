@@ -132,6 +132,13 @@ class Game {
 
 		this.bgImage = new Image();
 		this.bgImage.src = "/images/waves_glow.png";
+
+		// w / 600 = 2048 / 1152
+
+		this.imageHeight = canvas.height;
+		this.imageWidth =
+			(canvas.height * this.bgImage.width) / this.bgImage.height;
+		this.imageX = 0;
 	}
 
 	/**
@@ -164,12 +171,21 @@ class Game {
 			this.speed -= this.accelerationRate;
 			this.timeSinceLastAcceleration = 0;
 		}
+
+		this.imageX -= this.speed;
 	}
 
 	render() {
 		ctx.save();
-		ctx.drawImage(this.bgImage, 0, 0);
-
+		ctx.drawImage(
+			this.bgImage,
+			this.imageX,
+			0,
+			this.imageWidth,
+			this.imageHeight
+		);
+		ctx.fillStyle = "hsla(120, 100%, 50%, 0.2)";
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
 		ctx.restore();
 
 		ctx.save();
