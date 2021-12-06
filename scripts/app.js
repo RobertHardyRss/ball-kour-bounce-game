@@ -6,9 +6,7 @@ const ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 600;
 
-/**
- * @param {number} pt
- */
+/** @param {number} pt */
 function parabollicEasing(pt) {
 	let x = pt * 4 - 2;
 	let y = x * x * -1 + 4;
@@ -52,9 +50,7 @@ class KeyboardState {
 }
 
 class Player {
-	/**
-	 * @param {Array<SafePlatform>} [platforms]
-	 */
+	/** @param {Array<SafePlatform>} [platforms] */
 	constructor(platforms) {
 		this.platforms = platforms;
 		this.maxBounceHeight = canvas.height / 2;
@@ -71,9 +67,7 @@ class Player {
 		this.rightSide = this.x + this.radius / 2;
 	}
 
-	/**
-	 * @param {number} elapsedTime
-	 */
+	/** @param {number} elapsedTime */
 	update(elapsedTime) {
 		this.timeSinceLastBounce += elapsedTime;
 		const isMovingDown = this.timeSinceLastBounce > this.bounceTime / 2;
@@ -113,9 +107,7 @@ class Player {
 }
 
 class Game {
-	/**
-	 * @param {KeyboardState} kb
-	 */
+	/** @param {KeyboardState} kb */
 	constructor(kb) {
 		this.kb = kb;
 		this.speed = 0;
@@ -141,9 +133,7 @@ class Game {
 		this.imageX = 0;
 	}
 
-	/**
-	 * @param {number} elapsedTime
-	 */
+	/** @param {number} elapsedTime	 */
 	update(elapsedTime) {
 		this.timeSinceLastAcceleration += elapsedTime;
 
@@ -340,9 +330,7 @@ let tracers = [new Tracer(player, game)];
 
 let currentTime = 0;
 
-/**
- * @param {number} timestamp
- */
+/** @param {number} timestamp */
 function gameLoop(timestamp) {
 	let timeElapsed = timestamp - currentTime;
 	currentTime = timestamp;
