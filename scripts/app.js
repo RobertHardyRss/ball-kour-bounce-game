@@ -359,15 +359,16 @@ class PlatformManager {
 let kb = new KeyboardState();
 let game = new Game(kb);
 
-let p1 = new ScorePlatform(game);
-let p2 = new ScorePlatform(game);
-let p3 = new ScorePlatform(game);
+// let p1 = new ScorePlatform(game);
+// let p2 = new ScorePlatform(game);
+// let p3 = new ScorePlatform(game);
 
-p1.x = 400 + 50;
-p2.x = p1.x + 100;
-p3.x = p2.x + 100;
+// p1.x = 400 + 50;
+// p2.x = p1.x + 100;
+// p3.x = p2.x + 100;
 
-let platforms = [new SafePlatform(game), p1, p2, p3];
+let platforms = [new SafePlatform(game)];
+let pm = new PlatformManager(platforms, game);
 let player = new Player(platforms);
 let tracers = [new Tracer(player, game)];
 
@@ -381,6 +382,8 @@ function gameLoop(timestamp) {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 	tracers.push(new Tracer(player, game));
+
+	pm.update();
 	let gameObjects = [game, ...tracers, player, ...platforms];
 
 	gameObjects.forEach((o) => {
