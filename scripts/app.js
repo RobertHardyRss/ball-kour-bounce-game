@@ -281,10 +281,11 @@ class SafePlatform {
 	 */
 	update(elapsedTime) {
 		this.x -= this.game.speed;
-		this.isVisible = this.x + this.width > 0;
+		this.isVisible = this.x + this.width > 0 && this.x < canvas.width;
 	}
 
 	render() {
+		if (!this.isVisible) return;
 		ctx.save();
 		ctx.fillStyle = "hsla(0, 0%, 20%, 1)";
 		ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -315,10 +316,11 @@ class ScorePlatform {
 	 */
 	update(elapsedTime) {
 		this.x -= this.game.speed;
-		this.isVisible = this.x + this.width > 0;
+		this.isVisible = this.x + this.width > 0 && this.x < canvas.width;
 	}
 
 	render() {
+		if (!this.isVisible) return;
 		ctx.save();
 		ctx.fillStyle = "hsla(120, 100%, 50%, 1)";
 		ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -358,14 +360,6 @@ class PlatformManager {
 
 let kb = new KeyboardState();
 let game = new Game(kb);
-
-// let p1 = new ScorePlatform(game);
-// let p2 = new ScorePlatform(game);
-// let p3 = new ScorePlatform(game);
-
-// p1.x = 400 + 50;
-// p2.x = p1.x + 100;
-// p3.x = p2.x + 100;
 
 let platforms = [new SafePlatform(game)];
 let pm = new PlatformManager(platforms, game);
