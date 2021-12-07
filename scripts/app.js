@@ -162,7 +162,11 @@ class Game {
 			this.timeSinceLastAcceleration = 0;
 		}
 
-		this.imageX -= this.speed;
+		// parallax by moving at 10% of speed
+		this.imageX -= this.speed * 0.1;
+		if (this.imageX + this.imageWidth <= 0) {
+			this.imageX = 0;
+		}
 	}
 
 	render() {
@@ -174,6 +178,15 @@ class Game {
 			this.imageWidth,
 			this.imageHeight
 		);
+
+		ctx.drawImage(
+			this.bgImage,
+			this.imageX + this.imageWidth,
+			0,
+			this.imageWidth,
+			this.imageHeight
+		);
+
 		ctx.fillStyle = "hsla(120, 100%, 50%, 0.2)";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 		ctx.restore();
@@ -310,6 +323,36 @@ class ScorePlatform {
 		ctx.fillStyle = "hsla(120, 100%, 50%, 1)";
 		ctx.fillRect(this.x, this.y, this.width, this.height);
 		ctx.restore();
+	}
+}
+
+class PlatformManager {
+	constructor(platforms, game) {
+		this.platforms = platforms;
+		this.game = game;
+	}
+
+	update() {
+		let lastPlatform = platforms[platforms.length - 1];
+		let furthestX = lastPlatform.x + lastPlatform.width;
+
+		while (furthestX < canvas.width * 2) {
+			let spacer = Math.floor(Math.random() * 168 + 32);
+
+			let nextPlatformType = Math.random();
+
+			let p;
+
+			if (nextPlatformType < 0.1) {
+				p = new SafePlatform(this.game);
+			} else {
+				p = new ScorePlatform(this.game);
+			}
+
+			p.x = furthestX + spacer;
+			this.platforms.push(p);
+			furthestX += spacer + p.width;
+		}
 	}
 }
 
