@@ -5,6 +5,7 @@ const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 600;
+const PLAYER_WIDTH = 32;
 
 /** @param {number} pt */
 function parabollicEasing(pt) {
@@ -56,15 +57,16 @@ class Player {
 		this.maxBounceHeight = canvas.height / 2;
 		this.yOfLastBounce = 0;
 		this.x = canvas.width * 0.25;
-		this.y = 0;
+		this.y = canvas.height / 2;
 		this.prevY = 0;
 
 		this.bounceTime = 2000;
 		this.timeSinceLastBounce = 0;
-		this.radius = 16;
+		this.radius = PLAYER_WIDTH / 2;
 
-		this.leftSide = this.x - this.radius / 2;
-		this.rightSide = this.x + this.radius / 2;
+		this.leftSide = this.x - this.radius;
+		this.rightSide = this.x + this.radius;
+		this.gradientStartOffset = this.radius * 0.4;
 	}
 
 	/** @param {number} elapsedTime */
@@ -99,8 +101,22 @@ class Player {
 
 	render() {
 		ctx.save();
+		let rg = ctx.createRadialGradient(
+			this.x - this.gradientStartOffset,
+			this.y - this.gradientStartOffset,
+			3,
+			this.x,
+			this.y,
+			this.radius
+		);
+
+		rg.addColorStop(0, "white");
+		rg.addColorStop(0.2, "purple");
+		rg.addColorStop(1, "black");
+
 		ctx.beginPath();
 		ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+		ctx.fillStyle = rg;
 		ctx.fill();
 		ctx.restore();
 	}
@@ -111,8 +127,8 @@ class Game {
 	constructor(kb) {
 		this.kb = kb;
 		this.speed = 0;
-		this.maxSpeed = 100;
-		this.accelerationRate = 5;
+		this.maxSpeed = 50;
+		this.accelerationRate = 2;
 		this.accelerationInterval = 100;
 		this.timeSinceLastAcceleration = 0;
 
@@ -120,12 +136,10 @@ class Game {
 		this.scoreX = canvas.width - 150;
 		this.scoreY = 95;
 
-		this.wireUpListeners();
+		this.#wireUpListeners();
 
 		this.bgImage = new Image();
 		this.bgImage.src = "/images/waves_glow.png";
-
-		// w / 600 = 2048 / 1152
 
 		this.imageHeight = canvas.height;
 		this.imageWidth =
@@ -170,6 +184,22 @@ class Game {
 	}
 
 	render() {
+		this.#renderBackgroundImage();
+		this.#renderScore();
+	}
+
+	#renderScore() {
+		ctx.save();
+		ctx.fillStyle = "pink";
+		ctx.strokeStyle = "purple";
+		ctx.font = "90px fantasy";
+
+		ctx.fillText(`${this.score}`, this.scoreX, this.scoreY);
+		ctx.strokeText(`${this.score}`, this.scoreX, this.scoreY);
+		ctx.restore();
+	}
+
+	#renderBackgroundImage() {
 		ctx.save();
 		ctx.drawImage(
 			this.bgImage,
@@ -187,21 +217,12 @@ class Game {
 			this.imageHeight
 		);
 
-		ctx.fillStyle = "hsla(120, 100%, 50%, 0.2)";
+		ctx.fillStyle = "hsla(120, 0%, 0%, 0.5)";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
-		ctx.restore();
-
-		ctx.save();
-		ctx.fillStyle = "pink";
-		ctx.strokeStyle = "purple";
-		ctx.font = "90px fantasy";
-
-		ctx.fillText(`${this.score}`, this.scoreX, this.scoreY);
-		ctx.strokeText(`${this.score}`, this.scoreX, this.scoreY);
 		ctx.restore();
 	}
 
-	wireUpListeners() {
+	#wireUpListeners() {
 		document.addEventListener("bkb-bounce", (e) => {
 			// @ts-ignore
 			let p = e.detail;
@@ -218,25 +239,25 @@ class Tracer {
 	/**
 	 * @param {Player} p
 	 * @param {Game} g
+	 * @param {number} c
 	 */
-	constructor(p, g) {
+	constructor(p, g, c) {
 		this.p = p;
 		this.g = g;
+		this.color = c;
 
 		this.x = p.x;
 		this.y = p.y;
 
 		this.isVisible = true;
-		this.opacity = 1;
+		this.opacity = 0.8;
 
-		this.fadeRate = 0.1;
-		this.fadeInterval = 100;
+		this.fadeRate = 0.05;
+		this.fadeInterval = 50;
 		this.timeSinceFade = 0;
 	}
 
-	/**
-	 * @param {number} timeElapsed
-	 */
+	/** @param {number} timeElapsed */
 	update(timeElapsed) {
 		this.timeSinceFade += timeElapsed;
 		this.x -= this.g.speed;
@@ -252,86 +273,100 @@ class Tracer {
 	render() {
 		ctx.save();
 
-		ctx.fillStyle = `hsla(0, 0%, 50%, ${this.opacity})`;
+		ctx.fillStyle = `hsla(${this.color}, 100%, 50%, ${this.opacity})`;
 		ctx.beginPath();
 		ctx.arc(this.x, this.y, this.p.radius / 2, 0, Math.PI * 2, true);
 		ctx.fill();
 
 		ctx.restore();
 	}
+
+	static lastPlayerTracer = 0;
+	static playerTracerInterval = 50;
+	static color = 0;
+	/** @type {Array<Tracer>} */
+	static tracers = [];
+	static manageTracers(player, game, timeElapsed) {
+		Tracer.tracers = Tracer.tracers.filter((t) => t.isVisible);
+		Tracer.lastPlayerTracer += timeElapsed;
+		if (Tracer.lastPlayerTracer >= Tracer.playerTracerInterval) {
+			Tracer.tracers.push(new Tracer(player, game, this.color));
+			Tracer.lastPlayerTracer = 0;
+			this.color += 5;
+			if (this.color > 360) this.color = 0;
+		}
+	}
 }
 
-class SafePlatform {
-	/**
-	 * @param {Game} g
-	 */
+class Platform {
+	/** @param {Game} g	 */
 	constructor(g) {
 		this.game = g;
+		this.width = 0;
+		this.height = 0;
+		this.x = 0;
+		this.y = 0;
+		this.isVisible = true;
+		this.fillColor = "hsla(0, 0%, 20%, 1)";
+		this.isScorable = false;
+		this.isScored = false;
+	}
+
+	update() {
+		this.x -= this.game.speed;
+		this.isVisible = this.x + this.width > 0 && this.x < canvas.width;
+	}
+
+	render() {
+		if (!this.isVisible) return;
+		ctx.save();
+		ctx.fillStyle = this.fillColor;
+		ctx.fillRect(this.x, this.y, this.width, this.height);
+		ctx.restore();
+	}
+}
+
+class SafePlatform extends Platform {
+	/** @param {Game} g	 */
+	constructor(g) {
+		super(game);
 		this.width = 400;
 		this.height = 32;
-
 		this.x = 0;
 		this.y = canvas.height - this.height * 1.5;
-
-		this.isVisible = true;
-	}
-
-	/**
-	 * @param {number} elapsedTime
-	 */
-	update(elapsedTime) {
-		this.x -= this.game.speed;
-		this.isVisible = this.x + this.width > 0 && this.x < canvas.width;
-	}
-
-	render() {
-		if (!this.isVisible) return;
-		ctx.save();
-		ctx.fillStyle = "hsla(0, 0%, 20%, 1)";
-		ctx.fillRect(this.x, this.y, this.width, this.height);
-		ctx.restore();
+		this.fillColor = "hsla(0, 0%, 20%, 1)";
 	}
 }
 
-class ScorePlatform {
-	/**
-	 * @param {Game} g
-	 */
+class ScorePlatform extends Platform {
+	/** @param {Game} g */
 	constructor(g) {
-		this.game = g;
-		this.width = 32;
-		this.height = canvas.height;
-
+		super(g);
+		this.width = PLAYER_WIDTH * 3;
+		this.height = PLAYER_WIDTH;
 		this.x = 0;
-		this.y = canvas.height - 100;
-
+		this.y = canvas.height - 100 - Math.random() * 100;
 		this.isVisible = true;
-
-		this.isScored = false;
 		this.isScorable = true;
+		this.fillColor = "green";
 	}
 
-	/**
-	 * @param {number} elapsedTime
-	 */
-	update(elapsedTime) {
-		this.x -= this.game.speed;
-		this.isVisible = this.x + this.width > 0 && this.x < canvas.width;
-	}
-
-	render() {
-		if (!this.isVisible) return;
-		ctx.save();
-		ctx.fillStyle = "hsla(120, 100%, 50%, 1)";
-		ctx.fillRect(this.x, this.y, this.width, this.height);
-		ctx.restore();
+	update() {
+		this.fillColor = this.isScored ? "purple" : "lime";
+		super.update();
 	}
 }
 
 class PlatformManager {
+	/**
+	 * @param {Platform[]} platforms
+	 * @param {Game} game
+	 */
 	constructor(platforms, game) {
 		this.platforms = platforms;
 		this.game = game;
+		this.spacerMin = PLAYER_WIDTH;
+		this.spacerMultiplier = PLAYER_WIDTH * 12 - PLAYER_WIDTH;
 	}
 
 	update() {
@@ -339,8 +374,9 @@ class PlatformManager {
 		let furthestX = lastPlatform.x + lastPlatform.width;
 
 		while (furthestX < canvas.width * 2) {
-			let spacer = Math.floor(Math.random() * 168 + 32);
-
+			let spacer = Math.floor(
+				Math.random() * this.spacerMultiplier + this.spacerMin
+			);
 			let nextPlatformType = Math.random();
 
 			let p;
@@ -364,28 +400,23 @@ let game = new Game(kb);
 let platforms = [new SafePlatform(game)];
 let pm = new PlatformManager(platforms, game);
 let player = new Player(platforms);
-let tracers = [new Tracer(player, game)];
-
 let currentTime = 0;
 
 /** @param {number} timestamp */
 function gameLoop(timestamp) {
 	let timeElapsed = timestamp - currentTime;
 	currentTime = timestamp;
-	// console.log(timeElapsed, timestamp);
+
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	tracers.push(new Tracer(player, game));
-
+	Tracer.manageTracers(player, game, timeElapsed);
 	pm.update();
-	let gameObjects = [game, ...tracers, player, ...platforms];
+	let gameObjects = [game, ...Tracer.tracers, player, ...platforms];
 
 	gameObjects.forEach((o) => {
 		o.update(timeElapsed);
 		o.render();
 	});
-
-	tracers = tracers.filter((t) => t.isVisible);
 
 	requestAnimationFrame(gameLoop);
 }
