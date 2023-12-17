@@ -123,7 +123,7 @@ class Game {
 		this.wireUpListeners();
 
 		this.bgImage = new Image();
-		this.bgImage.src = "/images/waves_glow.png";
+		this.bgImage.src = "images/waves_glow.png";
 
 		// w / 600 = 2048 / 1152
 
